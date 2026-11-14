@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS users (
     face_photo_ref TEXT, -- Base64 reference image
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
+    is_auto_registered BOOLEAN NOT NULL DEFAULT FALSE,
+    is_profile_completed BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -179,3 +181,11 @@ ON CONFLICT (email) DO UPDATE SET
     nip = EXCLUDED.nip,
     nama = EXCLUDED.nama,
     role = EXCLUDED.role;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- SAFE MIGRATION SCRIPT (Jalankan di Neon SQL Editor jika database sudah ada)
+-- ══════════════════════════════════════════════════════════════════════════════
+ALTER TABLE users ADD COLUMN IF NOT EXISTS no_hp VARCHAR(30);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_auto_registered BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_profile_completed BOOLEAN NOT NULL DEFAULT TRUE;
+

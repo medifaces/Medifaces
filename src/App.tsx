@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { ChangePasswordModal } from './components/auth/ChangePasswordModal';
+import { CompleteProfileScreen } from './components/auth/CompleteProfileScreen';
 import { EmployeeLayout, EmployeeTab } from './components/employee/EmployeeLayout';
 import { HomeScreen } from './components/employee/HomeScreen';
 import { CameraScreen } from './components/employee/CameraScreen';
@@ -43,9 +44,14 @@ export const App: React.FC = () => {
     return <LoginScreen />;
   }
 
+  // Auto-registered employee needs to complete profile first
+  if (user.role === 'karyawan' && user.is_profile_completed === false) {
+    return <CompleteProfileScreen onSuccess={() => setMustChangePassword(false)} />;
+  }
+
   return (
     <>
-      {/* Mandatory Change Password Modal on First Login */}
+      {/* Mandatory Change Password Modal on First Login (for Admin or reset accounts) */}
       {mustChangePassword && (
         <ChangePasswordModal onSuccess={() => setMustChangePassword(false)} />
       )}

@@ -45,6 +45,8 @@ const inMemoryDB = {
       face_photo_ref: null,
       is_active: true,
       must_change_password: true,
+      is_auto_registered: false,
+      is_profile_completed: true,
       created_at: new Date().toISOString(),
     },
     {
@@ -63,6 +65,8 @@ const inMemoryDB = {
       face_photo_ref: null,
       is_active: true,
       must_change_password: true,
+      is_auto_registered: false,
+      is_profile_completed: true,
       created_at: new Date().toISOString(),
     },
     {

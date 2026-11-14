@@ -60,6 +60,8 @@ function getLocalDB() {
         face_photo_ref: null,
         is_active: true,
         must_change_password: true,
+        is_auto_registered: false,
+        is_profile_completed: true,
       },
       {
         id: 2,
@@ -75,6 +77,8 @@ function getLocalDB() {
         face_photo_ref: null,
         is_active: true,
         must_change_password: true,
+        is_auto_registered: false,
+        is_profile_completed: true,
       },
       {
         id: 3,
@@ -232,63 +236,243 @@ function saveLocalDB(db: any) {
 export const api = {
   // AUTH
   async login(email: string, password: string, role_target?: string) {
+    let res: Response | null = null;
     try {
-      const res = await fetch(`${BASE_URL}/auth`, {
+      res = await fetch(`${BASE_URL}/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role_target }),
       });
-      if (res.ok) {
-        return await res.json();
+    } catch (networkErr) {
+      // offline / sandbox network error -> use local fallback
+    }
+
+    if (res) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Email atau kata sandi tidak valid.');
       }
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Login gagal.');
-    } catch (err: any) {
-      // Local fallback for offline sandbox
-      const db = getLocalDB();
-      const clean = email.trim().toLowerCase();
-      const user = db.users.find((u: any) => u.email.toLowerCase() === clean || u.nip.toLowerCase() === clean);
-      if (!user) {
-        throw new Error('Akun tidak terdaftar. Hubungi Admin MSDM untuk aktivasi.');
+      return await res.json();
+    }
+
+    // Local fallback for offline sandbox
+    const db = getLocalDB();
+    const clean = email.trim().toLowerCase();
+    const seedPass = 'vokasi123';
+
+    // 1. Tab MSDM
+    if (role_target === 'sdm') {
+      if (clean !== 'sdm@vokasi.ui.ac.id') {
+        throw new Error('Email atau kata sandi tidak valid.');
       }
-      if (role_target && user.role !== role_target) {
-        throw new Error(role_target === 'sdm' ? 'Akun ini tidak memiliki hak akses Portal MSDM.' : 'Silakan gunakan tab Portal MSDM untuk login admin.');
+      const user = db.users.find((u: any) => u.email.toLowerCase() === clean && u.role === 'sdm');
+      if (!user) throw new Error('Email atau kata sandi tidak valid.');
+      if (!user.is_active) throw new Error('Akun Anda telah dinonaktifkan oleh Administrator.');
+
+      let isPassValid = false;
+      if (user.must_change_password) {
+        isPassValid = password === seedPass || password === user.password;
+      } else {
+        isPassValid = password === user.password;
       }
-      // Check password (accept 'vokasi123' or user password)
-      if (password !== 'vokasi123' && password !== user.password) {
-        throw new Error('Kata sandi salah.');
-      }
+      if (!isPassValid) throw new Error('Email atau kata sandi tidak valid.');
 
       const mockToken = 'mock_jwt_token_' + user.id + '_' + Date.now();
       return {
         token: mockToken,
         user,
-        must_change_password: user.must_change_password,
+        must_change_password: !!user.must_change_password,
+        is_profile_completed: true,
       };
     }
+
+    // 2. Tab Pegawai
+    const user = db.users.find((u: any) => u.email.toLowerCase() === clean || u.nip?.toLowerCase() === clean);
+    if (user) {
+      if (user.role === 'sdm') throw new Error('Email atau kata sandi tidak valid.');
+      if (!user.is_active) throw new Error('Akun Anda telah dinonaktifkan oleh Admin MSDM.');
+
+      let isPassValid = false;
+      if (user.must_change_password) {
+        isPassValid = password === seedPass || password === user.password;
+      } else {
+        isPassValid = password === user.password;
+      }
+      if (!isPassValid) throw new Error('Email atau kata sandi tidak valid.');
+
+      const mockToken = 'mock_jwt_token_' + user.id + '_' + Date.now();
+      return {
+        token: mockToken,
+        user,
+        must_change_password: !!user.must_change_password,
+        is_profile_completed: user.is_profile_completed !== false,
+      };
+    }
+
+    // Akun belum terdaftar di local DB -> AUTO-DAFTAR jika password === SEED_PASSWORD
+    if (password !== seedPass) {
+      throw new Error('Email atau kata sandi tidak valid.');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clean)) {
+      throw new Error('Format email tidak valid.');
+    }
+
+    const newUser = {
+      id: db.users.length + 1,
+      nip: 'PEG-' + Math.floor(100000 + Math.random() * 900000),
+      nama: 'Pegawai Baru',
+      email: clean,
+      password: seedPass,
+      role: 'karyawan',
+      jabatan: 'Staf Medis',
+      unit: 'Instalasi Rawat Inap',
+      lokasi_penempatan: 'Fakultas Vokasi UI',
+      jam_kerja: '08.00 - 14.00 WIB',
+      is_active: true,
+      must_change_password: true,
+      is_auto_registered: true,
+      is_profile_completed: false,
+      created_at: new Date().toISOString(),
+    };
+
+    db.users.push(newUser);
+    db.audit_log.unshift({
+      id: db.audit_log.length + 1,
+      user_id: newUser.id,
+      user_nama: newUser.nama,
+      action: 'Pendaftaran Akun Otomatis',
+      status: 'SUCCESS',
+      alasan: `Akun pegawai otomatis didaftarkan untuk email ${clean}`,
+      created_at: new Date().toISOString(),
+    });
+    saveLocalDB(db);
+
+    const mockToken = 'mock_jwt_token_' + newUser.id + '_' + Date.now();
+    return {
+      token: mockToken,
+      user: newUser,
+      must_change_password: true,
+      is_profile_completed: false,
+      is_new_registration: true,
+    };
+  },
+
+  async completeProfile(data: {
+    nama: string;
+    nip: string;
+    unit: string;
+    jabatan: string;
+    new_password: string;
+  }) {
+    let res: Response | null = null;
+    try {
+      res = await fetch(`${BASE_URL}/auth`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ action: 'complete_profile', ...data }),
+      });
+    } catch (networkErr) {}
+
+    if (res) {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Gagal melengkapi profil.');
+      }
+      return await res.json();
+    }
+
+    // Local fallback
+    const db = getLocalDB();
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) throw new Error('Sesi tidak valid.');
+    const u = db.users.find((usr: any) => usr.id === currentUserId);
+    if (!u) throw new Error('Pengguna tidak ditemukan.');
+
+    const cleanNip = data.nip.trim();
+    const dup = db.users.find((usr: any) => usr.id !== currentUserId && usr.nip === cleanNip);
+    if (dup) throw new Error('NIP sudah digunakan oleh staf lain. Silakan periksa kembali NIP Anda.');
+
+    if (!data.new_password || data.new_password.length < 8) {
+      throw new Error('Kata sandi baru minimal 8 karakter.');
+    }
+    if (data.new_password === 'vokasi123') {
+      throw new Error('Kata sandi baru tidak boleh sama dengan kata sandi awal.');
+    }
+
+    u.nama = data.nama.trim();
+    u.nip = cleanNip;
+    u.unit = data.unit;
+    u.jabatan = data.jabatan;
+    u.password = data.new_password;
+    u.must_change_password = false;
+    u.is_profile_completed = true;
+
+    db.audit_log.unshift({
+      id: db.audit_log.length + 1,
+      user_id: u.id,
+      user_nama: u.nama,
+      action: 'Lengkapi Profil & Ganti Kata Sandi',
+      status: 'SUCCESS',
+      alasan: `Pegawai melengkapi profil (NIP: ${cleanNip}, Unit: ${data.unit}) dan memperbarui kata sandi.`,
+      created_at: new Date().toISOString(),
+    });
+
+    saveLocalDB(db);
+    return { success: true, message: 'Profil berhasil dilengkapi dan kata sandi baru aktif.', user: u };
   },
 
   async changePassword(old_password: string, new_password: string) {
+    if (new_password.length < 8) {
+      throw new Error('Kata sandi baru minimal 8 karakter.');
+    }
+    if (new_password === 'vokasi123') {
+      throw new Error('Kata sandi baru tidak boleh sama dengan kata sandi awal.');
+    }
+
+    let res: Response | null = null;
     try {
-      const res = await fetch(`${BASE_URL}/auth`, {
+      res = await fetch(`${BASE_URL}/auth`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ action: 'change_password', old_password, new_password }),
       });
-      if (res.ok) return await res.json();
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Gagal mengubah kata sandi.');
-    } catch (err: any) {
-      const db = getLocalDB();
-      const currentUserId = Number(localStorage.getItem('medifaces_current_user_id') || 2);
-      const user = db.users.find((u: any) => u.id === currentUserId);
-      if (user) {
-        user.must_change_password = false;
-        user.password = new_password;
-        saveLocalDB(db);
+    } catch (networkErr) {}
+
+    if (res) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Gagal mengubah kata sandi.');
       }
-      return { success: true, message: 'Kata sandi berhasil diperbarui.' };
+      return await res.json();
     }
+
+    const db = getLocalDB();
+    const currentUserId = getCurrentUserId();
+    const user = db.users.find((u: any) => u.id === currentUserId);
+    if (!user) throw new Error('Pengguna tidak ditemukan.');
+
+    const isMatch = (old_password === user.password) || (user.must_change_password && old_password === 'vokasi123');
+    if (!isMatch) {
+      throw new Error('Kata sandi saat ini tidak sesuai.');
+    }
+
+    user.must_change_password = false;
+    user.password = new_password;
+
+    db.audit_log.unshift({
+      id: db.audit_log.length + 1,
+      user_id: user.id,
+      user_nama: user.nama,
+      action: 'Ubah Kata Sandi',
+      status: 'SUCCESS',
+      alasan: 'Kata sandi berhasil diperbarui oleh pengguna.',
+      created_at: new Date().toISOString(),
+    });
+
+    saveLocalDB(db);
+    return { success: true, message: 'Kata sandi berhasil diperbarui.' };
   },
 
   async updateProfile(data: { nama: string; email: string; no_hp?: string; foto_url?: string }) {
@@ -599,6 +783,8 @@ export const api = {
         jam_kerja: data.jam_kerja || '08.00 - 14.00 WIB',
         is_active: true,
         must_change_password: true,
+        is_auto_registered: false,
+        is_profile_completed: true,
       };
       db.users.push(newUser);
       saveLocalDB(db);

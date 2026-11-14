@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Search, Plus, Edit, Power, ShieldAlert, CheckCircle, X, User as UserIcon, RotateCcw } from 'lucide-react';
+import { Search, Plus, Edit, Power, ShieldAlert, CheckCircle, X, User as UserIcon, RotateCcw, UserCheck } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
 
 export const AdminPegawai: React.FC = () => {
@@ -186,6 +186,12 @@ export const AdminPegawai: React.FC = () => {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge status={staf.is_active ? 'Aktif' : 'Nonaktif'} size="sm" />
+                    {staf.is_auto_registered && (
+                      <span className="bg-[#BFE0F5] text-[#0F2E4C] border border-[#1479BD]/30 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1">
+                        <UserCheck className="w-3 h-3 text-[#1479BD]" />
+                        Baru Mendaftar
+                      </span>
+                    )}
                     {/* Badge Amber "Wajah belum terdaftar" / Biru "Wajah terdaftar" */}
                     {!hasFace ? (
                       <span className="bg-[#F2A65A] text-[#0F2E4C] px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
@@ -218,8 +224,8 @@ export const AdminPegawai: React.FC = () => {
                 </div>
               </div>
 
-              {/* Tombol Aksi: Edit & Nonaktifkan (Outline Merah) */}
-              <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[#DCEDF8]">
+              {/* Tombol Aksi: Edit, Reset Password, & Nonaktifkan/Aktifkan */}
+              <div className="grid grid-cols-3 gap-1.5 mt-4 pt-3 border-t border-[#DCEDF8]">
                 <button
                   type="button"
                   onClick={() => handleOpenEdit(staf)}
@@ -227,6 +233,25 @@ export const AdminPegawai: React.FC = () => {
                 >
                   <Edit className="w-3.5 h-3.5" />
                   <span>Edit</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm(`Reset kata sandi staf "${staf.nama}" ke nilai awal (vokasi123)? Staf wajib mengganti kata sandi saat login berikutnya.`)) {
+                      try {
+                        await api.resetPasswordPegawai(staf.id);
+                        alert(`Kata sandi untuk ${staf.nama} berhasil di-reset ke nilai default (vokasi123).`);
+                      } catch (e: any) {
+                        alert(e.message || 'Gagal mereset kata sandi.');
+                      }
+                    }
+                  }}
+                  title="Reset Kata Sandi"
+                  className="h-[36px] rounded-[12px] border border-[#F2A65A] text-[#0F2E4C] hover:bg-[#F2A65A]/10 font-bold text-xs transition flex items-center justify-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[#F2A65A]" />
+                  <span>Reset</span>
                 </button>
 
                 <button

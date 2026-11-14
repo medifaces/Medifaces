@@ -118,8 +118,12 @@ export const ProfileScreen: React.FC = () => {
     e.preventDefault();
     setPasswordMsg(null);
 
-    if (newPassword.length < 6) {
-      setPasswordMsg({ type: 'error', text: 'Kata sandi baru minimal 6 karakter.' });
+    if (newPassword.length < 8) {
+      setPasswordMsg({ type: 'error', text: 'Kata sandi baru minimal 8 karakter.' });
+      return;
+    }
+    if (newPassword.toLowerCase() === 'vokasi123') {
+      setPasswordMsg({ type: 'error', text: 'Kata sandi baru tidak boleh sama dengan kata sandi awal (vokasi123).' });
       return;
     }
     if (newPassword !== confirmPassword) {

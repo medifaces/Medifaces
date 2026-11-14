@@ -16,6 +16,8 @@ export interface User {
   face_photo_ref?: string;
   is_active: boolean;
   must_change_password: boolean;
+  is_auto_registered?: boolean;
+  is_profile_completed?: boolean;
   created_at?: string;
 }
 

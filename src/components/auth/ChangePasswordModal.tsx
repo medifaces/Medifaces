@@ -17,8 +17,12 @@ export const ChangePasswordModal: React.FC<Props> = ({ onSuccess }) => {
     e.preventDefault();
     setError('');
 
-    if (newPassword.length < 6) {
-      setError('Kata sandi baru minimal 6 karakter.');
+    if (newPassword.length < 8) {
+      setError('Kata sandi baru minimal 8 karakter.');
+      return;
+    }
+    if (newPassword.toLowerCase() === 'vokasi123') {
+      setError('Kata sandi baru tidak boleh sama dengan kata sandi awal (vokasi123).');
       return;
     }
     if (newPassword !== confirmPassword) {

@@ -40,7 +40,7 @@ export const handler = async (event) => {
         let rows = await sql`
           SELECT id, nip, nama, email, role, jabatan, unit, lokasi_penempatan, jam_kerja, 
                  foto_url, face_descriptor IS NOT NULL as face_registered, is_active, 
-                 must_change_password, created_at 
+                 must_change_password, is_auto_registered, created_at 
           FROM users 
           ORDER BY id ASC
         `;
@@ -66,6 +66,7 @@ export const handler = async (event) => {
           face_registered: !!u.face_descriptor,
           is_active: u.is_active,
           must_change_password: u.must_change_password,
+          is_auto_registered: !!u.is_auto_registered,
           created_at: u.created_at,
         }));
 
@@ -153,11 +154,35 @@ export const handler = async (event) => {
       }
 
       if (action === 'toggle_active') {
+        let targetUser = null;
         if (isPostgres) {
-          await sql`UPDATE users SET is_active = NOT is_active, updated_at = NOW() WHERE id = ${id}`;
+          const updated = await sql`
+            UPDATE users SET is_active = NOT is_active, updated_at = NOW() 
+            WHERE id = ${id}
+            RETURNING id, nama, email, is_active
+          `;
+          targetUser = updated[0];
+          if (targetUser) {
+            await sql`
+              INSERT INTO audit_log (user_id, action, status, alasan)
+              VALUES (${user.id}, 'Ubah Status Pegawai', 'SUCCESS', ${'Status akun ' + targetUser.nama + ' diubah menjadi ' + (targetUser.is_active ? 'Aktif' : 'Nonaktif')})
+            `;
+          }
         } else {
           const u = inMemoryDB.users.find(u => u.id === Number(id));
-          if (u) u.is_active = !u.is_active;
+          if (u) {
+            u.is_active = !u.is_active;
+            targetUser = u;
+            inMemoryDB.audit_log.unshift({
+              id: inMemoryDB.audit_log.length + 1,
+              user_id: user.id,
+              user_nama: user.nama,
+              action: 'Ubah Status Pegawai',
+              status: 'SUCCESS',
+              alasan: `Status akun ${u.nama} diubah menjadi ${u.is_active ? 'Aktif' : 'Nonaktif'}`,
+              created_at: new Date().toISOString(),
+            });
+          }
         }
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Status pegawai berhasil diubah.' }) };
       }
@@ -166,12 +191,32 @@ export const handler = async (event) => {
         const seedPass = process.env.SEED_PASSWORD || 'vokasi123';
         const passwordHash = await hashPassword(seedPass);
         if (isPostgres) {
-          await sql`UPDATE users SET password_hash = ${passwordHash}, must_change_password = TRUE, updated_at = NOW() WHERE id = ${id}`;
+          const updated = await sql`
+            UPDATE users 
+            SET password_hash = ${passwordHash}, must_change_password = TRUE, updated_at = NOW() 
+            WHERE id = ${id}
+            RETURNING id, nama, email
+          `;
+          if (updated[0]) {
+            await sql`
+              INSERT INTO audit_log (user_id, action, status, alasan)
+              VALUES (${user.id}, 'Reset Kata Sandi Pegawai', 'SUCCESS', ${'Kata sandi akun ' + updated[0].nama + ' di-reset ke nilai awal oleh Admin MSDM'})
+            `;
+          }
         } else {
           const u = inMemoryDB.users.find(u => u.id === Number(id));
           if (u) {
             u.password_hash = passwordHash;
             u.must_change_password = true;
+            inMemoryDB.audit_log.unshift({
+              id: inMemoryDB.audit_log.length + 1,
+              user_id: user.id,
+              user_nama: user.nama,
+              action: 'Reset Kata Sandi Pegawai',
+              status: 'SUCCESS',
+              alasan: `Kata sandi akun ${u.nama} di-reset ke nilai awal oleh Admin MSDM`,
+              created_at: new Date().toISOString(),
+            });
           }
         }
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Kata sandi berhasil di-reset ke nilai seed.' }) };
