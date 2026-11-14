@@ -26,6 +26,8 @@ export const App: React.FC = () => {
   // Employee State
   const [employeeTab, setEmployeeTab] = useState<EmployeeTab>('home');
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [cameraType, setCameraType] = useState<'masuk' | 'pulang'>('masuk');
+  const [latestAttendanceRecord, setLatestAttendanceRecord] = useState<any>(null);
   const [isHistoryActive, setIsHistoryActive] = useState<boolean>(false);
 
   // Admin State
@@ -73,8 +75,12 @@ export const App: React.FC = () => {
         <>
           {isCameraActive ? (
             <CameraScreen
+              attendanceType={cameraType}
               onBack={() => setIsCameraActive(false)}
-              onSuccess={() => {
+              onSuccess={(record) => {
+                if (record) {
+                  setLatestAttendanceRecord(record);
+                }
                 setIsCameraActive(false);
                 setEmployeeTab('home');
               }}
@@ -88,6 +94,8 @@ export const App: React.FC = () => {
               activeTab={employeeTab}
               onTabChange={tab => {
                 if (tab === 'absen') {
+                  const targetType = latestAttendanceRecord?.jam_masuk && !latestAttendanceRecord?.jam_pulang ? 'pulang' : 'masuk';
+                  setCameraType(targetType);
                   setIsCameraActive(true);
                 } else {
                   setEmployeeTab(tab);
@@ -96,8 +104,12 @@ export const App: React.FC = () => {
             >
               {employeeTab === 'home' && (
                 <HomeScreen
-                  onGoToAbsen={() => setIsCameraActive(true)}
+                  onGoToAbsen={(tipe) => {
+                    setCameraType(tipe);
+                    setIsCameraActive(true);
+                  }}
                   onGoToRiwayat={() => setIsHistoryActive(true)}
+                  lastRecordUpdate={latestAttendanceRecord}
                 />
               )}
               {employeeTab === 'cuti' && <LeaveScreen />}
@@ -111,4 +123,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

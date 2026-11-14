@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { Lock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export const ChangePasswordModal: React.FC<Props> = ({ onSuccess }) => {
+  const { updateUser, setMustChangePassword } = useAuth();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,6 +35,8 @@ export const ChangePasswordModal: React.FC<Props> = ({ onSuccess }) => {
     setLoading(true);
     try {
       await api.changePassword(oldPassword, newPassword);
+      updateUser({ must_change_password: false });
+      setMustChangePassword(false);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Gagal mengubah kata sandi.');
@@ -78,14 +82,14 @@ export const ChangePasswordModal: React.FC<Props> = ({ onSuccess }) => {
 
           <div>
             <label className="block text-[12px] font-bold text-[#2F6A94] uppercase tracking-wider mb-1.5">
-              Kata Sandi Baru (Min. 6 Karakter)
+              Kata Sandi Baru (Min. 8 Karakter)
             </label>
             <input
               type="password"
               required
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              placeholder="Masukkan kata sandi baru yang kuat"
+              placeholder="Masukkan kata sandi baru (minimal 8 karakter)"
               className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-sm focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
             />
           </div>

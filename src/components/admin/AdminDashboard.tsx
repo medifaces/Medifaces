@@ -271,13 +271,15 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-xs text-[#2F6A94] mb-4">Persentase ketepatan waktu berdasarkan instalasi medis</p>
 
           <div className="space-y-4">
-            {[
-              { unit: 'Instalasi Gawat Darurat (UGD)', pct: 92 },
+            {(unitDiscipline.length > 0 ? unitDiscipline : [
+              { unit: 'Instalasi Gawat Darurat (UGD/IGD)', pct: 96 },
               { unit: 'Instalasi Rawat Inap', pct: 95 },
               { unit: 'Poli Penyakit Dalam', pct: 98 },
-              { unit: 'Instalasi Farmasi', pct: 88 },
-              { unit: 'Manajemen SDM & Rektorat', pct: 100 },
-            ].map(u => (
+              { unit: 'Instalasi Farmasi', pct: 92 },
+              { unit: 'Keamanan (Satpam / Security)', pct: 100 },
+              { unit: 'Driver & Ambulans', pct: 94 },
+              { unit: 'Manajemen SDM', pct: 100 },
+            ]).map(u => (
               <div key={u.unit}>
                 <div className="flex items-center justify-between text-xs font-bold mb-1">
                   <span className="text-[#0F2E4C]">{u.unit}</span>

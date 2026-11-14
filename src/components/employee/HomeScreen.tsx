@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { RefreshCw, MapPin, Check, Fingerprint, AlertCircle, Clock, ChevronRight, X } from 'lucide-react';
+import { RefreshCw, MapPin, Check, Fingerprint, AlertCircle, Clock, ChevronRight, X, Sparkles } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
 
 interface Props {
-  onGoToAbsen: () => void;
+  onGoToAbsen: (type: 'masuk' | 'pulang') => void;
   onGoToRiwayat: () => void;
+  lastRecordUpdate?: any;
 }
 
-export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
+export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat, lastRecordUpdate }) => {
   const { user } = useAuth();
   const [time, setTime] = useState(new Date());
   const [todayRecord, setTodayRecord] = useState<any>(null);
@@ -22,12 +23,13 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
   const [gpsActive, setGpsActive] = useState(true);
   const [gpsDistance, setGpsDistance] = useState<number>(42); // default near Vokasi UI
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const shiftOptions = [
     { id: 1, nama: 'Shift Pagi', jam: '08.00-14.00' },
     { id: 2, nama: '5 Hari Kerja', jam: '07.30-16.00' },
     { id: 3, nama: 'Shift Siang', jam: '14.00-20.00' },
-    { id: 4, deliberate: true, id_val: 4, nama: 'Shift Malam', jam: '20.00-08.00' },
+    { id: 4, nama: 'Shift Malam', jam: '20.00-08.00' },
     { id: 5, nama: '6 Hari Kerja', jam: '08.00-14.30' },
     { id: 6, nama: 'Koperasi - Sore', jam: '13.00-19.00' },
     { id: 7, nama: 'Driver Pagi', jam: '06.00-14.00' },
@@ -45,11 +47,11 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
     setLoading(true);
     try {
       const res = await api.getStatusHariIni();
-      if (res.record) {
+      if (res?.record) {
         setTodayRecord(res.record);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Load status error:', e);
     } finally {
       setLoading(false);
     }
@@ -66,6 +68,17 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
       );
     }
   }, []);
+
+  // Terima pembaruan rekam kehadiran dari CameraScreen langsung tanpa perlu refresh manual
+  useEffect(() => {
+    if (lastRecordUpdate) {
+      setTodayRecord(lastRecordUpdate);
+      const isPulang = !!lastRecordUpdate.jam_pulang;
+      setToastMessage(isPulang ? 'Absen pulang berhasil dicatat.' : 'Absen masuk berhasil dicatat.');
+      const t = setTimeout(() => setToastMessage(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [lastRecordUpdate]);
 
   // Format greeting
   const hour = time.getHours();
@@ -99,12 +112,25 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
   const hasCheckedIn = !!todayRecord?.jam_masuk;
   const hasCheckedOut = !!todayRecord?.jam_pulang;
 
+  const handleAbsenClick = () => {
+    const targetType = hasCheckedIn && !hasCheckedOut ? 'pulang' : 'masuk';
+    onGoToAbsen(targetType);
+  };
+
   return (
-    <div className="flex flex-col gap-[12px] relative">
+    <div className="flex flex-col gap-[12px] relative pb-6">
+      {/* Toast Notifikasi Berhasil Absen */}
+      {toastMessage && (
+        <div className="bg-emerald-600 text-white px-4 py-2.5 rounded-[16px] text-xs font-bold flex items-center gap-2 shadow-lg animate-in slide-in-from-top duration-300">
+          <Sparkles className="w-4 h-4 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header Pegawai */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-3">
-          {/* Avatar Inisial: kotak 46px radius 16px, latar #1479BD, teks putih */}
+          {/* Avatar Inisial */}
           <div className="w-[46px] h-[46px] rounded-[16px] bg-[#1479BD] text-white font-extrabold text-[17px] flex items-center justify-center shadow-sm">
             {initials}
           </div>
@@ -118,7 +144,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
           </div>
         </div>
 
-        {/* Tombol Refresh 44px */}
+        {/* Tombol Refresh */}
         <button
           type="button"
           onClick={loadData}
@@ -129,7 +155,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
         </button>
       </div>
 
-      {/* Kartu Hero Jam: radius 28px, padding 20-22px, latar #1479BD, teks putih */}
+      {/* Kartu Hero Jam */}
       <div className="bg-[#1479BD] rounded-[28px] p-[22px] text-white shadow-lg relative overflow-hidden">
         {/* Label Shift & Tombol Ganti */}
         <div className="flex items-center justify-between mb-2">
@@ -188,7 +214,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
               if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(() => setGpsActive(true));
               }
-              setGpsActive(true); // for demo fallback
+              setGpsActive(true);
             }}
             className="h-[36px] px-3.5 bg-[#D14343] text-white text-xs font-bold rounded-full hover:bg-red-700 transition"
           >
@@ -215,7 +241,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
               : '--:--'}
           </div>
           <span className="text-[11px] font-semibold text-[#2F6A94] mt-0.5 block">
-            {hasCheckedIn ? 'Terverifikasi wajah' : 'Jadwal: 08.00 WIB'}
+            {hasCheckedIn ? 'Hadir · Terverifikasi' : 'Jadwal: 08.00 WIB'}
           </span>
         </div>
 
@@ -235,7 +261,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
               : '--:--'}
           </div>
           <span className="text-[11px] font-semibold text-[#2F6A94] mt-0.5 block">
-            {hasCheckedOut ? 'Selesai bertugas' : 'Jadwal: 14.00 WIB'}
+            {hasCheckedOut ? 'Selesai bertugas' : (hasCheckedIn ? 'Siap absen pulang' : 'Jadwal: 14.00 WIB')}
           </span>
         </div>
       </div>
@@ -249,7 +275,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
           <div className="flex items-center gap-3 mt-1.5">
             <span className="inline-flex items-center gap-1 text-xs font-bold text-[#0F2E4C]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#1479BD]" />
-              Hadir: 22 hari
+              Hadir: {todayRecord?.jam_masuk ? '23 hari' : '22 hari'}
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-bold text-[#D14343]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#D14343]" />
@@ -267,13 +293,12 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
         </button>
       </div>
 
-      {/* Tombol Pil Utama: "Absen Masuk" / "Absen Pulang" */}
-      {/* Bentuk pil, tinggi 60-72px, teks tebal 16-18px. Tombol "Absen Masuk": latar #1479BD, teks putih, di kanan ada lingkaran putih 52px berisi ikon sidik jari */}
-      <div className="pt-1">
+      {/* Tombol Pil Utama: "Absen Masuk" / "Absen Pulang" / "Absen Hari Ini Selesai" */}
+      <div className="pt-2 mb-8">
         <button
           type="button"
           disabled={!gpsActive || (hasCheckedIn && hasCheckedOut)}
-          onClick={onGoToAbsen}
+          onClick={handleAbsenClick}
           className={`w-full h-[68px] rounded-full p-2 pl-6 flex items-center justify-between shadow-lg transition active:scale-[0.98] ${
             !gpsActive
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -285,30 +310,32 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
           }`}
         >
           <div className="text-left">
-            <span className="text-[18px] font-extrabold tracking-wide block leading-none">
+            <span className="text-[17px] font-extrabold tracking-wide block leading-none">
               {!hasCheckedIn
                 ? 'Absen Masuk'
                 : !hasCheckedOut
                 ? 'Absen Pulang'
-                : 'Absensi Hari Ini Lengkap'}
+                : 'Absen Hari Ini Selesai'}
             </span>
-            <span className="text-[12px] text-white/80 font-medium mt-1 block">
+            <span className="text-[11px] text-white/80 font-medium mt-1 block">
               {!hasCheckedIn
                 ? 'Pindai wajah & GPS Vokasi UI'
                 : !hasCheckedOut
                 ? 'Pindai wajah akhir shift'
-                : 'Terima kasih atas pelayanan Anda'}
+                : 'Terima kasih atas dedikasi pelayanan Anda'}
             </span>
           </div>
 
-          {/* Lingkaran Putih 52px Berisi Ikon Sidik Jari */}
-          <div className="w-[52px] h-[52px] rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md">
+          {/* Lingkaran Putih 50px Berisi Ikon Sidik Jari */}
+          <div className="w-[50px] h-[50px] rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-md">
             <Fingerprint
               className={`w-7 h-7 ${
                 !gpsActive
                   ? 'text-gray-400'
                   : hasCheckedIn && !hasCheckedOut
                   ? 'text-[#0F2E4C]'
+                  : hasCheckedIn && hasCheckedOut
+                  ? 'text-gray-400'
                   : 'text-[#1479BD]'
               }`}
             />
@@ -316,7 +343,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
         </button>
       </div>
 
-      {/* Bottom Sheet Ganti Shift (radius atas 28px) */}
+      {/* Bottom Sheet Ganti Shift */}
       {showShiftSheet && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs p-0">
           <div className="bg-white w-full max-w-[390px] rounded-t-[28px] p-5 shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200">
@@ -342,24 +369,22 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
                     key={sh.id}
                     type="button"
                     onClick={() => {
-                      setCurrentShift({ id: sh.id, nama: sh.nama, jam: sh.jam });
+                      setCurrentShift(sh);
                       setShowShiftSheet(false);
                     }}
-                    className={`w-full p-3.5 rounded-[16px] flex items-center justify-between text-left transition ${
+                    className={`w-full p-3.5 rounded-[16px] text-left transition flex items-center justify-between border ${
                       isSelected
-                        ? 'bg-[#1479BD] text-white shadow-md'
-                        : 'bg-[#DCEDF8]/60 text-[#0F2E4C] hover:bg-[#DCEDF8]'
+                        ? 'border-[#1479BD] bg-[#DCEDF8]/50 shadow-xs'
+                        : 'border-[#BFE0F5] hover:bg-[#DCEDF8]/30'
                     }`}
                   >
                     <div>
-                      <span className="font-extrabold text-sm block">{sh.nama}</span>
-                      <span className={`text-xs ${isSelected ? 'text-[#BFE0F5]' : 'text-[#2F6A94]'}`}>
-                        Jam: {sh.jam} WIB
-                      </span>
+                      <div className="text-sm font-extrabold text-[#0F2E4C]">{sh.nama}</div>
+                      <div className="text-xs text-[#2F6A94] font-medium mt-0.5">{sh.jam} WIB</div>
                     </div>
                     {isSelected && (
-                      <div className="w-6 h-6 rounded-full bg-white text-[#1479BD] flex items-center justify-center">
-                        <Check className="w-4 h-4 stroke-[3]" />
+                      <div className="w-6 h-6 rounded-full bg-[#1479BD] text-white flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     )}
                   </button>

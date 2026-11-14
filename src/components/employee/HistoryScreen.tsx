@@ -171,7 +171,7 @@ export const HistoryScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
                 {r.jarak_meter && (
                   <span className="text-[10px] text-[#2F6A94]/80 mt-0.5 block">
-                    Radius: {Math.round(r.jarak_meter)}m · Akurasi wajah: {r.skor_wajah ? Math.round(r.skor_wajah) : 94}%
+                    Radius: {Math.round(r.jarak_meter)}m · Biometrik Wajah Terverifikasi
                   </span>
                 )}
               </div>

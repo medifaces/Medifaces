@@ -19,7 +19,7 @@ import {
 import { StatusBadge } from '../common/StatusBadge';
 
 export const ProfileScreen: React.FC = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, setMustChangePassword } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit Profil State
@@ -134,6 +134,8 @@ export const ProfileScreen: React.FC = () => {
     setLoadingPass(true);
     try {
       await api.changePassword(oldPassword, newPassword);
+      updateUser({ must_change_password: false });
+      setMustChangePassword(false);
       setPasswordMsg({ type: 'success', text: 'Kata sandi berhasil diperbarui.' });
       setOldPassword('');
       setNewPassword('');
@@ -417,7 +419,7 @@ export const ProfileScreen: React.FC = () => {
               required
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
-              placeholder="Minimal 6 karakter"
+              placeholder="Minimal 8 karakter"
               className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
             />
           </div>
@@ -446,15 +448,17 @@ export const ProfileScreen: React.FC = () => {
         </form>
       </div>
 
-      {/* Tombol Logout */}
-      <button
-        type="button"
-        onClick={logout}
-        className="w-full h-[52px] rounded-full border-2 border-[#D14343] text-[#D14343] font-extrabold text-xs tracking-wide hover:bg-red-50 transition flex items-center justify-center gap-2"
-      >
-        <LogOut className="w-4 h-4" />
-        <span>Keluar dari Akun</span>
-      </button>
+      {/* Tombol Logout - margin bawah aman */}
+      <div className="mb-8">
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full h-[52px] rounded-full border-2 border-[#D14343] text-[#D14343] font-extrabold text-xs tracking-wide hover:bg-red-50 transition flex items-center justify-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Keluar dari Akun</span>
+        </button>
+      </div>
     </div>
   );
 };

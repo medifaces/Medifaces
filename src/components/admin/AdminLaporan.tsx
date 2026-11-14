@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { Download, FileText, Printer, Calendar, BarChart3 } from 'lucide-react';
+import { HOSPITAL_UNIT_CATEGORIES } from '../../constants/hospitalData';
 
 export const AdminLaporan: React.FC = () => {
   const [data, setData] = useState<{
@@ -58,10 +59,15 @@ export const AdminLaporan: React.FC = () => {
             className="h-[42px] px-3.5 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
           >
             <option value="Semua Unit">Semua Unit Kerja</option>
-            <option value="Instalasi Rawat Inap">Instalasi Rawat Inap</option>
-            <option value="Instalasi Gawat Darurat (UGD)">Instalasi Gawat Darurat (UGD)</option>
-            <option value="Poli Penyakit Dalam">Poli Penyakit Dalam</option>
-            <option value="Instalasi Farmasi">Instalasi Farmasi</option>
+            {HOSPITAL_UNIT_CATEGORIES.map(cat => (
+              <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                {cat.units.map(u => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </div>
 

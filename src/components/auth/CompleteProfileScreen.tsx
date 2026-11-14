@@ -3,32 +3,25 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { MedicalLogo } from '../common/MedicalLogo';
 import { User, IdCard, Building, Briefcase, Lock, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { HOSPITAL_UNIT_CATEGORIES, HOSPITAL_ROLES, OTHER_OPTION } from '../../constants/hospitalData';
 
 interface Props {
   onSuccess: () => void;
 }
 
 export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, setMustChangePassword } = useAuth();
 
   const [nama, setNama] = useState('');
   const [nip, setNip] = useState('');
-  const [unit, setUnit] = useState('Instalasi Rawat Inap');
-  const [jabatan, setJabatan] = useState('Staf Medis');
+  const [selectedUnit, setSelectedUnit] = useState(HOSPITAL_UNIT_CATEGORIES[0].units[0]);
+  const [customUnit, setCustomUnit] = useState('');
+  const [selectedJabatan, setSelectedJabatan] = useState(HOSPITAL_ROLES[0]);
+  const [customJabatan, setCustomJabatan] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const unitOptions = [
-    'Instalasi Rawat Inap',
-    'Instalasi Gawat Darurat (UGD)',
-    'Poli Penyakit Dalam',
-    'Instalasi Farmasi',
-    'Kamar Operasi (OK)',
-    'Laboratorium Patologi',
-    'Radiologi',
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +38,19 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
       setError('NIP pegawai wajib diisi.');
       return;
     }
+
+    const finalUnit = selectedUnit === OTHER_OPTION ? customUnit.trim() : selectedUnit;
+    if (!finalUnit) {
+      setError('Silakan tentukan unit kerja Anda.');
+      return;
+    }
+
+    const finalJabatan = selectedJabatan === OTHER_OPTION ? customJabatan.trim() : selectedJabatan;
+    if (!finalJabatan) {
+      setError('Silakan tentukan jabatan/peran Anda di rumah sakit.');
+      return;
+    }
+
     if (newPassword.length < 8) {
       setError('Kata sandi baru minimal 8 karakter.');
       return;
@@ -63,14 +69,28 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
       const res = await api.completeProfile({
         nama: trimmedNama,
         nip: trimmedNip,
-        unit,
-        jabatan: jabatan.trim() || 'Staf Medis',
+        unit: finalUnit,
+        jabatan: finalJabatan,
         new_password: newPassword,
       });
 
       if (res.user) {
-        updateUser(res.user);
+        updateUser({
+          ...res.user,
+          must_change_password: false,
+          is_profile_completed: true,
+        });
+      } else {
+        updateUser({
+          nama: trimmedNama,
+          nip: trimmedNip,
+          unit: finalUnit,
+          jabatan: finalJabatan,
+          must_change_password: false,
+          is_profile_completed: true,
+        });
       }
+      setMustChangePassword(false);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Gagal menyimpan profil pegawai.');
@@ -80,10 +100,10 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#DCEDF8] flex flex-col justify-between items-center p-5 selection:bg-[#BFE0F5]">
-      <div className="w-full max-w-[390px] mx-auto flex flex-col pt-3 pb-6">
+    <div className="min-h-screen bg-[#DCEDF8] flex flex-col justify-between items-center p-4 selection:bg-[#BFE0F5]">
+      <div className="w-full max-w-[390px] mx-auto flex flex-col pt-2 pb-24">
         {/* Logo Kotak Biru Palang Medis */}
-        <div className="mb-5">
+        <div className="mb-4">
           <MedicalLogo size="md" />
         </div>
 
@@ -92,10 +112,10 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
           <span className="text-[11px] font-bold tracking-widest uppercase bg-white/20 px-3 py-1 rounded-full text-white">
             Aktivasi Akun Pegawai
           </span>
-          <h1 className="text-[28px] font-extrabold leading-[1.15] mt-3 tracking-tight">
+          <h1 className="text-[26px] font-extrabold leading-[1.15] mt-2.5 tracking-tight">
             Lengkapi profil.
           </h1>
-          <p className="text-[#BFE0F5] text-xs font-medium mt-1.5 leading-relaxed">
+          <p className="text-[#BFE0F5] text-xs font-medium mt-1 leading-relaxed">
             Silakan lengkapi identitas rumah sakit dan buat kata sandi baru untuk mulai bertugas.
           </p>
         </div>
@@ -122,32 +142,28 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
               <label className="block text-[12px] font-bold text-[#2F6A94] uppercase tracking-wider mb-1">
                 Nama Lengkap & Gelar *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={nama}
-                  onChange={e => setNama(e.target.value)}
-                  placeholder="Contoh: dr. Budi Santoso, Sp.PD"
-                  className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={nama}
+                onChange={e => setNama(e.target.value)}
+                placeholder="Contoh: dr. Budi Santoso, Sp.PD / Siti Rahma, S.Kep"
+                className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
+              />
             </div>
 
             <div>
               <label className="block text-[12px] font-bold text-[#2F6A94] uppercase tracking-wider mb-1">
                 NIP Pegawai *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={nip}
-                  onChange={e => setNip(e.target.value)}
-                  placeholder="Nomor Induk Pegawai resmi"
-                  className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
-                />
-              </div>
+              <input
+                type="text"
+                required
+                value={nip}
+                onChange={e => setNip(e.target.value)}
+                placeholder="Nomor Induk Pegawai resmi"
+                className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
+              />
             </div>
 
             <div>
@@ -155,30 +171,61 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
                 Instalasi / Unit Kerja *
               </label>
               <select
-                value={unit}
-                onChange={e => setUnit(e.target.value)}
+                value={selectedUnit}
+                onChange={e => setSelectedUnit(e.target.value)}
                 className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
               >
-                {unitOptions.map(opt => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
+                {HOSPITAL_UNIT_CATEGORIES.map(cat => (
+                  <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                    {cat.units.map(u => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
+                <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
               </select>
+
+              {selectedUnit === OTHER_OPTION && (
+                <input
+                  type="text"
+                  required
+                  value={customUnit}
+                  onChange={e => setCustomUnit(e.target.value)}
+                  placeholder="Tuliskan nama unit kerja Anda"
+                  className="w-full h-[46px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD] mt-2 border border-[#1479BD]/30"
+                />
+              )}
             </div>
 
             <div>
               <label className="block text-[12px] font-bold text-[#2F6A94] uppercase tracking-wider mb-1">
-                Jabatan Medis *
+                Jabatan / Peran di Rumah Sakit *
               </label>
-              <input
-                type="text"
-                required
-                value={jabatan}
-                onChange={e => setJabatan(e.target.value)}
-                placeholder="Contoh: Perawat Pelaksana / Staf Medis"
-                className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
-              />
+              <select
+                value={selectedJabatan}
+                onChange={e => setSelectedJabatan(e.target.value)}
+                className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
+              >
+                {HOSPITAL_ROLES.map(role => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+                <option value={OTHER_OPTION}>{OTHER_OPTION}</option>
+              </select>
+
+              {selectedJabatan === OTHER_OPTION && (
+                <input
+                  type="text"
+                  required
+                  value={customJabatan}
+                  onChange={e => setCustomJabatan(e.target.value)}
+                  placeholder="Tuliskan nama jabatan Anda"
+                  className="w-full h-[46px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD] mt-2 border border-[#1479BD]/30"
+                />
+              )}
             </div>
 
             <div className="pt-2 border-t border-[#DCEDF8]">
@@ -217,21 +264,23 @@ export const CompleteProfileScreen: React.FC<Props> = ({ onSuccess }) => {
               </div>
             </div>
 
-            {/* Tombol Simpan */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-[54px] rounded-full bg-[#1479BD] text-white font-extrabold text-[15px] tracking-wide shadow-md hover:bg-[#10659e] transition flex items-center justify-center gap-2 mt-5 disabled:opacity-50"
-            >
-              {loading ? (
-                'Menyimpan Profil...'
-              ) : (
-                <>
-                  <span>Simpan & Mulai Bertugas</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+            {/* Tombol Simpan - full width & margin aman dari badge Netlify */}
+            <div className="pt-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-[54px] rounded-full bg-[#1479BD] text-white font-extrabold text-[15px] tracking-wide shadow-md hover:bg-[#10659e] transition flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
+              >
+                {loading ? (
+                  'Menyimpan Profil...'
+                ) : (
+                  <>
+                    <span>Simpan & Mulai Bertugas</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
 
           <div className="mt-4 p-3 rounded-[14px] bg-[#DCEDF8]/50 border border-[#BFE0F5] flex items-start gap-2">

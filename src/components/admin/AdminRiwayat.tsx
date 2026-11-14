@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { Printer, Search, Filter, Edit3, Image, X, Check } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
+import { HOSPITAL_UNIT_CATEGORIES } from '../../constants/hospitalData';
 
 export const AdminRiwayat: React.FC = () => {
   const [records, setRecords] = useState<any[]>([]);
@@ -65,10 +66,15 @@ export const AdminRiwayat: React.FC = () => {
             className="h-[44px] px-3.5 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
           >
             <option value="Semua Unit">Semua Unit</option>
-            <option value="Instalasi Rawat Inap">Instalasi Rawat Inap</option>
-            <option value="Instalasi Gawat Darurat (UGD)">Instalasi Gawat Darurat (UGD)</option>
-            <option value="Poli Penyakit Dalam">Poli Penyakit Dalam</option>
-            <option value="Instalasi Farmasi">Instalasi Farmasi</option>
+            {HOSPITAL_UNIT_CATEGORIES.map(cat => (
+              <optgroup key={cat.category} label={`── ${cat.category} ──`}>
+                {cat.units.map(u => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
 
           {/* Filter Status */}

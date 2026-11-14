@@ -13,9 +13,9 @@ export const EmployeeLayout: React.FC<Props> = ({ activeTab, onTabChange, childr
   return (
     <div className="min-h-screen bg-[#DCEDF8] flex justify-center selection:bg-[#BFE0F5]">
       {/* Container Mobile Lebar Acuan 390px */}
-      <div className="w-full max-w-[390px] min-h-screen flex flex-col justify-between relative bg-[#DCEDF8] shadow-xl pb-[90px]">
-        {/* Main Content Area with 20px padding */}
-        <main className="p-[20px] flex-1 flex flex-col gap-[12px] overflow-y-auto">
+      <div className="w-full max-w-[390px] min-h-screen flex flex-col justify-between relative bg-[#DCEDF8] shadow-xl pb-[110px]">
+        {/* Main Content Area with 18px padding & bottom clearance from bottom nav & Netlify badge */}
+        <main className="p-[18px] pb-[110px] flex-1 flex flex-col gap-[12px] overflow-y-auto">
           {children}
         </main>
 
