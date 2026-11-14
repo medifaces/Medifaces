@@ -177,11 +177,42 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Kata sandi berhasil di-reset ke nilai seed.' }) };
       }
 
-      // Update fields
+      // Update fields (Termasuk Email, NIP, Nama, Jabatan, Unit, dll)
+      if (fields.email) {
+        const cleanEmail = fields.email.trim().toLowerCase();
+        let emailTaken = false;
+        if (isPostgres) {
+          const check = await sql`SELECT id FROM users WHERE LOWER(email) = ${cleanEmail} AND id != ${id}`;
+          emailTaken = check.length > 0;
+        } else {
+          emailTaken = inMemoryDB.users.some(u => u.email.toLowerCase() === cleanEmail && u.id !== Number(id));
+        }
+        if (emailTaken) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email sudah digunakan oleh akun lain.' }) };
+        }
+      }
+
+      if (fields.nip) {
+        const cleanNip = fields.nip.trim();
+        let nipTaken = false;
+        if (isPostgres) {
+          const check = await sql`SELECT id FROM users WHERE nip = ${cleanNip} AND id != ${id}`;
+          nipTaken = check.length > 0;
+        } else {
+          nipTaken = inMemoryDB.users.some(u => u.nip === cleanNip && u.id !== Number(id));
+        }
+        if (nipTaken) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'NIP sudah digunakan oleh staf lain.' }) };
+        }
+      }
+
       if (isPostgres) {
         await sql`
           UPDATE users 
           SET nama = COALESCE(${fields.nama}, nama),
+              email = COALESCE(${fields.email ? fields.email.trim().toLowerCase() : null}, email),
+              nip = COALESCE(${fields.nip ? fields.nip.trim() : null}, nip),
+              no_hp = COALESCE(${fields.no_hp}, no_hp),
               jabatan = COALESCE(${fields.jabatan}, jabatan),
               unit = COALESCE(${fields.unit}, unit),
               jam_kerja = COALESCE(${fields.jam_kerja}, jam_kerja),
@@ -192,7 +223,10 @@ export const handler = async (event) => {
       } else {
         const u = inMemoryDB.users.find(u => u.id === Number(id));
         if (u) {
-          if (fields.nama) u.nama = fields.nama;
+          if (fields.nama) u.nama = fields.nama.trim();
+          if (fields.email) u.email = fields.email.trim().toLowerCase();
+          if (fields.nip) u.nip = fields.nip.trim();
+          if (fields.no_hp !== undefined) u.no_hp = fields.no_hp;
           if (fields.jabatan) u.jabatan = fields.jabatan;
           if (fields.unit) u.unit = fields.unit;
           if (fields.jam_kerja) u.jam_kerja = fields.jam_kerja;

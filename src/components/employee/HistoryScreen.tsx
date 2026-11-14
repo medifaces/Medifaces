@@ -166,7 +166,7 @@ export const HistoryScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="flex items-center gap-2 mt-1 text-[11px] text-[#2F6A94] font-semibold">
                   <Clock className="w-3.5 h-3.5 text-[#1479BD]" />
                   <span>
-                    Masuk: {r.jam_masuk?.slice(0, 5) || '07:48'} · Pulang: {r.jam_pulang?.slice(0, 5) || '14:02'}
+                    Masuk: {r.jam_masuk ? r.jam_masuk.slice(0, 5) : '--:--'} · Pulang: {r.jam_pulang ? r.jam_pulang.slice(0, 5) : '--:--'}
                   </span>
                 </div>
                 {r.jarak_meter && (

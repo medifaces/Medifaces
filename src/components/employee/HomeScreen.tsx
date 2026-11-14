@@ -75,13 +75,13 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
   else if (hour >= 18 || hour < 5) greeting = 'Selamat malam';
 
   // Format initials
-  const initials = (user?.nama || 'SM')
+  const initials = (user?.nama || 'Pegawai')
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map(w => w[0])
     .join('')
-    .toUpperCase();
+    .toUpperCase() || 'P';
 
   // Clock string
   const hh = String(time.getHours()).padStart(2, '0');
@@ -113,7 +113,7 @@ export const HomeScreen: React.FC<Props> = ({ onGoToAbsen, onGoToRiwayat }) => {
               {greeting},
             </span>
             <span className="text-[16px] font-extrabold text-[#0F2E4C] block leading-tight mt-1 truncate max-w-[210px]">
-              {user?.nama || 'Siti Mulia Rahmah'}
+              {user?.nama || 'Pegawai'}
             </span>
           </div>
         </div>

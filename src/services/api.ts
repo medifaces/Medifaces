@@ -291,6 +291,56 @@ export const api = {
     }
   },
 
+  async updateProfile(data: { nama: string; email: string; no_hp?: string; foto_url?: string }) {
+    try {
+      const res = await fetch(`${BASE_URL}/auth`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ action: 'update_profile', ...data }),
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Gagal memperbarui profil.');
+    } catch (e: any) {
+      const db = getLocalDB();
+      const currentUserId = Number(localStorage.getItem('medifaces_current_user_id'));
+      if (!currentUserId) throw new Error('Pengguna tidak terautentikasi.');
+
+      const cleanEmail = data.email.trim().toLowerCase();
+      // Validasi keunikan email di antara akun lain
+      const isTaken = db.users.some((u: any) => u.email.toLowerCase() === cleanEmail && u.id !== currentUserId);
+      if (isTaken) {
+        throw new Error('Email sudah digunakan oleh akun lain. Gunakan email berbeda.');
+      }
+
+      const user = db.users.find((u: any) => u.id === currentUserId);
+      if (!user) throw new Error('Pengguna tidak ditemukan.');
+
+      const oldEmail = user.email;
+      const emailChanged = oldEmail.toLowerCase() !== cleanEmail;
+
+      user.nama = data.nama.trim();
+      user.email = cleanEmail;
+      if (data.no_hp !== undefined) user.no_hp = data.no_hp;
+      if (data.foto_url) user.foto_url = data.foto_url;
+
+      if (emailChanged) {
+        db.audit_log.unshift({
+          id: db.audit_log.length + 1,
+          user_id: currentUserId,
+          user_nama: user.nama,
+          action: 'Ubah Email Akun',
+          status: 'SUCCESS',
+          alasan: `Email diubah dari ${oldEmail} menjadi ${cleanEmail}`,
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      saveLocalDB(db);
+      return { success: true, message: 'Profil berhasil diperbarui.', user };
+    }
+  },
+
   async enrolFace(face_descriptor: string, face_photo_ref?: string) {
     try {
       const res = await fetch(`${BASE_URL}/auth`, {

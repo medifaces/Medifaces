@@ -117,14 +117,14 @@ export const AdminRiwayat: React.FC = () => {
             {records.map((r, idx) => (
               <tr key={r.id || idx} className="hover:bg-[#DCEDF8]/30 transition">
                 <td className="py-3 px-3 font-bold text-[#2F6A94]">{idx + 1}</td>
-                <td className="py-3 px-3 font-extrabold text-[#1479BD]">{r.user_nip || '48'}</td>
+                <td className="py-3 px-3 font-extrabold text-[#1479BD]">{r.user_nip || '-'}</td>
                 <td className="py-3 px-3 font-bold text-[#0F2E4C]">
-                  <div>{r.user_nama || 'Siti Mulia Rahmah'}</div>
-                  <div className="text-[10px] text-[#2F6A94]">{r.user_unit || 'Instalasi Rawat Inap'}</div>
+                  <div>{r.user_nama || 'Pegawai'}</div>
+                  <div className="text-[10px] text-[#2F6A94]">{r.user_unit || '-'}</div>
                 </td>
                 <td className="py-3 px-3 text-[#2F6A94] font-medium whitespace-nowrap">{r.tanggal}</td>
                 <td className="py-3 px-3 font-extrabold text-[#0F2E4C]">
-                  {r.jam_masuk?.slice(0, 5) || '07:48'}
+                  {r.jam_masuk?.slice(0, 5) || '--:--'}
                 </td>
                 <td className="py-3 px-3 font-extrabold text-[#0F2E4C]">
                   {r.jam_pulang?.slice(0, 5) || '--:--'}

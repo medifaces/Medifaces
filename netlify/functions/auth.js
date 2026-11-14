@@ -117,6 +117,101 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Data wajah berhasil didaftarkan.' }) };
       }
 
+      // Update Profile (Self by Employee or Admin)
+      if (action === 'update_profile') {
+        const decoded = verifyToken(authHeader);
+        if (!decoded) {
+          return { statusCode: 401, headers, body: JSON.stringify({ error: 'Otorisasi diperlukan.' }) };
+        }
+
+        const { nama, email, no_hp, foto_url } = body;
+        if (!nama || !nama.trim()) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Nama lengkap wajib diisi.' }) };
+        }
+        if (!email || !email.trim() || !email.includes('@')) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Format email tidak valid.' }) };
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+
+        // Check if email is already taken by another user
+        let emailTaken = false;
+        if (isPostgres) {
+          const check = await sql`SELECT id FROM users WHERE LOWER(email) = ${cleanEmail} AND id != ${decoded.id}`;
+          emailTaken = check.length > 0;
+        } else {
+          emailTaken = inMemoryDB.users.some(u => u.email.toLowerCase() === cleanEmail && u.id !== decoded.id);
+        }
+
+        if (emailTaken) {
+          return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email sudah digunakan oleh akun lain. Gunakan email berbeda.' }) };
+        }
+
+        let currentUser = null;
+        if (isPostgres) {
+          const rows = await sql`SELECT * FROM users WHERE id = ${decoded.id}`;
+          currentUser = rows[0];
+        } else {
+          currentUser = inMemoryDB.users.find(u => u.id === decoded.id);
+        }
+
+        if (!currentUser) {
+          return { statusCode: 404, headers, body: JSON.stringify({ error: 'Pengguna tidak ditemukan.' }) };
+        }
+
+        const oldEmail = currentUser.email;
+        const emailChanged = oldEmail.toLowerCase() !== cleanEmail;
+
+        if (isPostgres) {
+          const updated = await sql`
+            UPDATE users 
+            SET nama = ${nama.trim()},
+                email = ${cleanEmail},
+                no_hp = ${no_hp || null},
+                foto_url = COALESCE(${foto_url}, foto_url),
+                updated_at = NOW()
+            WHERE id = ${decoded.id}
+            RETURNING id, nip, nama, email, no_hp, role, jabatan, unit, lokasi_penempatan, jam_kerja, foto_url, face_descriptor, is_active, must_change_password
+          `;
+          currentUser = updated[0];
+
+          if (emailChanged) {
+            await sql`
+              INSERT INTO audit_log (user_id, action, status, alasan)
+              VALUES (${decoded.id}, 'Ubah Email Akun', 'SUCCESS', ${'Email diubah dari ' + oldEmail + ' menjadi ' + cleanEmail})
+            `;
+          }
+        } else {
+          currentUser.nama = nama.trim();
+          currentUser.email = cleanEmail;
+          if (no_hp !== undefined) currentUser.no_hp = no_hp;
+          if (foto_url) currentUser.foto_url = foto_url;
+
+          if (emailChanged) {
+            inMemoryDB.audit_log.unshift({
+              id: inMemoryDB.audit_log.length + 1,
+              user_id: decoded.id,
+              user_nama: currentUser.nama,
+              action: 'Ubah Email Akun',
+              status: 'SUCCESS',
+              alasan: `Email diubah dari ${oldEmail} menjadi ${cleanEmail}`,
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        const { password_hash, ...safeUser } = currentUser;
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            message: 'Profil berhasil diperbarui.',
+            user: safeUser,
+          }),
+        };
+      }
+
       // Standard Login
       const { email, password, role_target } = body;
       if (!email || !password) {

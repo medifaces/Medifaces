@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     nip VARCHAR(50) NOT NULL UNIQUE,
     nama VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
+    no_hp VARCHAR(30),
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('sdm', 'karyawan')),
     jabatan VARCHAR(100) NOT NULL DEFAULT 'Staf Medis',

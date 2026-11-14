@@ -17,7 +17,7 @@ export const AdminShift: React.FC = () => {
 
   // Initial Matrix Schedule
   const [scheduleMatrix, setScheduleMatrix] = useState<Record<number, Record<string, string>>>({
-    2: { Senin: 'P', Selasa: 'P', Rabu: 'S', Kamis: 'M', Jumat: 'L', Sabtu: 'P', Minggu: 'L' }, // Siti Mulia Rahmah
+    2: { Senin: 'P', Selasa: 'P', Rabu: 'S', Kamis: 'M', Jumat: 'L', Sabtu: 'P', Minggu: 'L' },
     3: { Senin: 'P', Selasa: 'P', Rabu: 'P', Kamis: 'P', Jumat: 'P', Sabtu: 'L', Minggu: 'L' }, // dr Andika
     4: { Senin: 'M', Selasa: 'M', Rabu: 'L', Kamis: 'P', Jumat: 'S', Sabtu: 'S', Minggu: 'L' }, // Ns Ratna
     5: { Senin: 'P', Selasa: 'P', Rabu: 'P', Kamis: 'P', Jumat: 'P', Sabtu: 'L', Minggu: 'L' }, // Budi Santoso

@@ -7,21 +7,16 @@ import { ShieldCheck, ArrowRight, Info } from 'lucide-react';
 export const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const [roleMode, setRoleMode] = useState<'karyawan' | 'sdm'>('karyawan');
-  const [identifier, setIdentifier] = useState('sitimuliarahmah@gmail.com');
-  const [password, setPassword] = useState('vokasi123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleToggleMode = (mode: 'karyawan' | 'sdm') => {
     setRoleMode(mode);
     setError('');
-    if (mode === 'karyawan') {
-      setIdentifier('sitimuliarahmah@gmail.com');
-      setPassword('vokasi123');
-    } else {
-      setIdentifier('sdm@vokasi.ui.ac.id');
-      setPassword('vokasi123');
-    }
+    setIdentifier('');
+    setPassword('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +108,7 @@ export const LoginScreen: React.FC = () => {
                 required
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
-                placeholder={roleMode === 'sdm' ? 'sdm@vokasi.ui.ac.id' : 'NIP atau email terdaftar'}
+                placeholder={roleMode === 'sdm' ? 'Email admin terdaftar' : 'NIP atau email terdaftar'}
                 className="w-full h-[48px] px-4 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] placeholder-[#2F6A94]/60 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
               />
             </div>
@@ -155,26 +150,6 @@ export const LoginScreen: React.FC = () => {
             <p className="text-[11px] text-[#2F6A94] leading-relaxed">
               Dengan masuk, Anda menyetujui pemrosesan data biometrik wajah dan koordinat lokasi untuk keperluan absensi rumah sakit terenkripsi.
             </p>
-          </div>
-
-          {/* Quick Demo Helper */}
-          <div className="mt-4 pt-3 border-t border-[#DCEDF8] flex items-center justify-between text-[11px] text-[#2F6A94]">
-            <span className="font-semibold">Uji coba cepat:</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (roleMode === 'karyawan') {
-                  setIdentifier('sitimuliarahmah@gmail.com');
-                  setPassword('vokasi123');
-                } else {
-                  setIdentifier('sdm@vokasi.ui.ac.id');
-                  setPassword('vokasi123');
-                }
-              }}
-              className="text-[#1479BD] font-bold hover:underline"
-            >
-              Muat Akun Seed
-            </button>
           </div>
         </div>
 

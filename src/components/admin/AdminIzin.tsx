@@ -100,7 +100,7 @@ export const AdminIzin: React.FC = () => {
                   <td className="py-3.5 px-4 font-bold text-[#0F2E4C]">
                     <div className="text-sm font-extrabold">{item.user_nama || 'Pegawai Medis'}</div>
                     <div className="text-[11px] text-[#2F6A94]">
-                      NIP {item.user_nip || '48'} · {item.user_unit || 'Instalasi Rawat Inap'}
+                      NIP {item.user_nip || '-'} · {item.user_unit || '-'}
                     </div>
                   </td>
                   <td className="py-3.5 px-3">

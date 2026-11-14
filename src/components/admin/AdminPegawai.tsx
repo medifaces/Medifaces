@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Search, Plus, Edit, Power, ShieldAlert, CheckCircle, X, User as UserIcon } from 'lucide-react';
+import { Search, Plus, Edit, Power, ShieldAlert, CheckCircle, X, User as UserIcon, RotateCcw } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
 
 export const AdminPegawai: React.FC = () => {
@@ -81,7 +81,7 @@ export const AdminPegawai: React.FC = () => {
     try {
       if (editingPegawai) {
         // Edit existing
-        await api.tambahPegawai({
+        await api.updatePegawai(editingPegawai.id, {
           nip: formNip,
           nama: formNama,
           email: formEmail,
@@ -284,7 +284,7 @@ export const AdminPegawai: React.FC = () => {
                     required
                     value={formNip}
                     onChange={e => setFormNip(e.target.value)}
-                    placeholder="Contoh: 48"
+                    placeholder="Contoh: 101"
                     className="w-full h-[46px] px-3.5 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
                   />
                 </div>
@@ -297,7 +297,7 @@ export const AdminPegawai: React.FC = () => {
                     required
                     value={formEmail}
                     onChange={e => setFormEmail(e.target.value)}
-                    placeholder="nama@vokasi.ui.ac.id"
+                    placeholder="email@rumahsakit.com"
                     className="w-full h-[46px] px-3.5 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
                   />
                 </div>
@@ -312,7 +312,7 @@ export const AdminPegawai: React.FC = () => {
                   required
                   value={formNama}
                   onChange={e => setFormNama(e.target.value)}
-                  placeholder="Contoh: Siti Mulia Rahmah, S.Kep"
+                  placeholder="Nama lengkap dan gelar staf"
                   className="w-full h-[46px] px-3.5 rounded-[14px] bg-[#DCEDF8] text-[#0F2E4C] text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#1479BD]"
                 />
               </div>
@@ -374,20 +374,42 @@ export const AdminPegawai: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="h-[44px] px-5 rounded-full border border-gray-300 text-[#0F2E4C] text-xs font-bold hover:bg-gray-100 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="h-[44px] px-6 rounded-full bg-[#1479BD] text-white text-xs font-extrabold hover:bg-[#10659e] transition shadow-md"
-                >
-                  Simpan Staf
-                </button>
+              <div className="pt-3 flex items-center justify-between gap-3">
+                {editingPegawai ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm(`Reset kata sandi staf "${editingPegawai.nama}" ke nilai awal (vokasi123)? Staf wajib mengganti kata sandi saat login berikutnya.`)) {
+                        try {
+                          await api.resetPasswordPegawai(editingPegawai.id);
+                          alert(`Kata sandi untuk ${editingPegawai.nama} berhasil direset ke nilai default.`);
+                        } catch (e: any) {
+                          setFormError(e.message || 'Gagal mereset kata sandi.');
+                        }
+                      }
+                    }}
+                    className="h-[44px] px-4 rounded-full border border-[#F2A65A] text-[#0F2E4C] hover:bg-[#F2A65A]/10 font-bold text-xs flex items-center gap-1.5 transition"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-[#F2A65A]" />
+                    <span>Reset Password</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="h-[44px] px-5 rounded-full border border-gray-300 text-[#0F2E4C] text-xs font-bold hover:bg-gray-100 transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="h-[44px] px-6 rounded-full bg-[#1479BD] text-white text-xs font-extrabold hover:bg-[#10659e] transition shadow-md"
+                  >
+                    Simpan Staf
+                  </button>
+                </div>
               </div>
             </form>
           </div>

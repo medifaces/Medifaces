@@ -38,8 +38,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, [token]);
 
+  const clearSessionStorage = () => {
+    localStorage.removeItem('medifaces_token');
+    localStorage.removeItem('medifaces_user');
+    localStorage.removeItem('medifaces_current_user_id');
+    try {
+      sessionStorage.clear();
+    } catch {}
+  };
+
   const login = async (email: string, pass: string, role_target?: string): Promise<User> => {
     setIsLoading(true);
+    // Bersihkan sesi lama sebelum memuat akun baru
+    clearSessionStorage();
+    setUser(null);
+    setToken(null);
+    setMustChangePassword(false);
+
     try {
       const res = await api.login(email, pass, role_target);
       localStorage.setItem('medifaces_token', res.token);
@@ -55,9 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('medifaces_token');
-    localStorage.removeItem('medifaces_user');
-    localStorage.removeItem('medifaces_current_user_id');
+    clearSessionStorage();
     setUser(null);
     setToken(null);
     setMustChangePassword(false);
@@ -68,6 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!prev) return null;
       const next = { ...prev, ...updated };
       localStorage.setItem('medifaces_user', JSON.stringify(next));
+      if (next.id) {
+        localStorage.setItem('medifaces_current_user_id', String(next.id));
+      }
       return next;
     });
   };

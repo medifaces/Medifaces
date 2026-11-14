@@ -33,6 +33,14 @@ interface Props {
 export const AdminLayout: React.FC<Props> = ({ activeMenu, onMenuChange, children }) => {
   const { user, logout } = useAuth();
 
+  const adminInitials = (user?.nama || 'Admin MSDM')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase() || 'AD';
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard MSDM', icon: LayoutDashboard },
     { id: 'live', label: 'Absensi Live', icon: Radio },
@@ -109,14 +117,14 @@ export const AdminLayout: React.FC<Props> = ({ activeMenu, onMenuChange, childre
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-[10px] bg-[#1479BD] text-white font-extrabold text-xs flex items-center justify-center">
-                SDM
+                {adminInitials}
               </div>
               <div className="overflow-hidden">
                 <span className="text-xs font-extrabold text-[#0F2E4C] block truncate">
                   {user?.nama || 'Admin MSDM'}
                 </span>
                 <span className="text-[10px] text-[#2F6A94] font-semibold block truncate">
-                  {user?.email || 'sdm@vokasi.ui.ac.id'}
+                  {user?.email || 'admin@rumahsakit.com'}
                 </span>
               </div>
             </div>

@@ -221,10 +221,10 @@ export const AdminDashboard: React.FC = () => {
 
               <div className="p-3 rounded-[14px] bg-amber-50 border border-amber-200">
                 <span className="text-xs font-bold text-[#0F2E4C] block">
-                  Siti Mulia Rahmah (NIP 48)
+                  Pemberitahuan Pendaftaran Wajah
                 </span>
                 <span className="text-[11px] text-[#2F6A94] mt-0.5 block">
-                  Template wajah belum terdaftar di sistem
+                  Pastikan pegawai baru telah mendaftarkan template biometrik wajah di menu Profil
                 </span>
               </div>
             </div>

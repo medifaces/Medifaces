@@ -5,6 +5,7 @@ export interface User {
   nip: string;
   nama: string;
   email: string;
+  no_hp?: string;
   role: Role;
   jabatan: string;
   unit: string;
