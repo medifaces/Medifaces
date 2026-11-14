@@ -180,10 +180,7 @@ export const LoginScreen: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-6">
-          <p className="text-[12px] font-semibold text-[#2F6A94]">
-            Developed by <span className="font-bold text-[#0F2E4C]">stmuliarrh</span>
-          </p>
-          <p className="text-[10px] text-[#2F6A94]/70 mt-0.5">
+          <p className="text-[11px] font-semibold text-[#2F6A94]/80">
             MEDIFACES v1.0 · Smart Attendance, Better Healthcare
           </p>
         </div>
